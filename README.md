@@ -26,11 +26,14 @@ op te vragen. Maak er af en toe een kopie van als back-up.
 
 ## API
 
+Kamelen kunnen bewust niet via de site worden verwijderd. Moet er toch een weg, haal hem dan
+met de hand uit `db.json` in de datamap (en uit de `walkers` van zijn wandelingen).
+
+
 | Methode | Pad | Wat |
 | --- | --- | --- |
 | GET | `/api/state` | Alle kamelen, routes, wandelingen en doelen |
 | POST | `/api/camels` | `{name, color}` kameel toevoegen |
-| DELETE | `/api/camels/{id}` | kameel verwijderen (ook uit wandelingen) |
 | POST | `/api/routes` | `{name, km}` vaste route toevoegen |
 | DELETE | `/api/routes/{id}` | route verwijderen |
 | POST | `/api/walks` | `{walkers: [id], km, kind: lunch\|vergader, date, routeId}` |

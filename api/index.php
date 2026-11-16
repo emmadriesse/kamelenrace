@@ -179,17 +179,8 @@ route('POST', '/api/camels', function () {
     return state();
 });
 
-route('DELETE', '/api/camels/([a-z0-9]+)', function ($id) {
-    global $DB;
-    db(true);
-    remove_by_id('camels', $id);
-    // Haal de kameel ook uit wandelingen; een wandeling zonder lopers verdwijnt
-    foreach ($DB['walks'] as &$w) $w['walkers'] = array_values(array_diff($w['walkers'] ?? [], [$id]));
-    unset($w);
-    $DB['walks'] = array_values(array_filter($DB['walks'], function ($w) { return count($w['walkers']) > 0; }));
-    save();
-    return state();
-});
+// Kamelen (collega's) kunnen bewust niet via de site worden verwijderd.
+// Moet er toch een weg? Haal hem dan met de hand uit db.json in de datamap.
 
 route('POST', '/api/routes', function () {
     global $DB;

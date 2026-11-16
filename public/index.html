@@ -442,7 +442,7 @@ ul.plain li span.grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
 
     // beheer lists
     $("camelList").innerHTML = [...S.camels].sort((a,b)=>a.name.localeCompare(b.name,"nl")).map(c =>
-      `<li><span style="width:12px;height:12px;border-radius:50%;background:${esc(c.color)};flex:none"></span><span class="grow">${esc(c.name)}</span><button class="x" type="button" data-del-camel="${esc(c.id)}">Verwijder</button></li>`).join("");
+      `<li><span style="width:12px;height:12px;border-radius:50%;background:${esc(c.color)};flex:none"></span><span class="grow">${esc(c.name)}</span></li>`).join("");
     $("routeList").innerHTML = routes.map(r =>
       `<li><span class="grow">${esc(r.name)}</span><span class="num muted">${fmt(r.km)} km</span><button class="x" type="button" data-del-route="${esc(r.id)}">Verwijder</button></li>`).join("")
       || `<li class="muted" style="border:0">Nog geen vaste routes. Voeg je vaste rondjes toe, dan kan iedereen ze kiezen.</li>`;
@@ -551,7 +551,7 @@ ul.plain li span.grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
   // two-step delete
   let armed = null, armTimer = null;
   document.addEventListener("click", async e => {
-    const b = e.target.closest("[data-del-walk],[data-del-camel],[data-del-route]"); if(!b) return;
+    const b = e.target.closest("[data-del-walk],[data-del-route]"); if(!b) return;
     if(armed !== b){
       if(armed){ armed.classList.remove("sure"); armed.textContent = armed.dataset.label; }
       armed = b; b.dataset.label = b.textContent; b.classList.add("sure"); b.textContent = "Zeker?";
@@ -559,8 +559,8 @@ ul.plain li span.grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
       return;
     }
     armed = null; clearTimeout(armTimer);
-    const path = b.dataset.delWalk ? "walks/"+b.dataset.delWalk : b.dataset.delCamel ? "camels/"+b.dataset.delCamel : "routes/"+b.dataset.delRoute;
-    const nid = b.dataset.delWalk ? "walkNote" : b.dataset.delCamel ? "camelNote" : "routeNote";
+    const path = b.dataset.delWalk ? "walks/"+b.dataset.delWalk : "routes/"+b.dataset.delRoute;
+    const nid = b.dataset.delWalk ? "walkNote" : "routeNote";
     await guard(() => api("DELETE", path), nid);
   });
 
