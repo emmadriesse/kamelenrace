@@ -1,0 +1,5 @@
+dist
+# Lokale data: alle wandelingen. Nooit committen.
+data/
+api/data/
+.DS_Store

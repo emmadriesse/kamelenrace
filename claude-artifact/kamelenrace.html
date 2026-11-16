@@ -1,0 +1,572 @@
+<title>Kamelenrace</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one race page — caravan goal up top, race lanes as the centrepiece, then log form + recent walks side by side, then beheer. */
+:root{
+  --bg:#F1F3F0; --surface:#FFFFFF; --fg:#1E2321; --muted:#5F6A66; --line:#D9DED9;
+  --sand:#E9D3A6; --sand-2:#DDBF86; --dune:#C99A55; --camel:#9A6A36; --camel-dark:#6E4A24;
+  --accent:#0E6E6A; --accent-fg:#FFFFFF; --accent-soft:#D6ECE9;
+  --good:#2E7D4F; --warn:#B5651D; --danger:#B3261E;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151C; --surface:#1B1F29; --fg:#ECEAE4; --muted:#9BA2AE; --line:#2C3240;
+  --sand:#4A3D2A; --sand-2:#5A4930; --dune:#7A6040; --camel:#C8955A; --camel-dark:#8E6234;
+  --accent:#4FC2B8; --accent-fg:#0B1B1A; --accent-soft:#183634;
+  --good:#6CC98F; --warn:#E3A15C; --danger:#F08A80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151C; --surface:#1B1F29; --fg:#ECEAE4; --muted:#9BA2AE; --line:#2C3240;
+  --sand:#4A3D2A; --sand-2:#5A4930; --dune:#7A6040; --camel:#C8955A; --camel-dark:#8E6234;
+  --accent:#4FC2B8; --accent-fg:#0B1B1A; --accent-soft:#183634;
+  --good:#6CC98F; --warn:#E3A15C; --danger:#F08A80; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800;line-height:1}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+header.top p{margin:6px 0 0;max-width:60ch;color:var(--muted)}
+.status{font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status.live .dot{background:var(--good)}
+.status.err .dot{background:var(--warn)}
+
+/* caravan / team goal */
+.caravan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.caravan-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:12px}
+.big{font-family:var(--display);font-size:clamp(2rem,4.4vw,2.8rem);font-weight:800;line-height:1}
+.big small{font-size:.45em;font-weight:600;color:var(--muted);margin-left:4px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:.88rem}
+.stats b{font-family:var(--display);font-size:1.15rem;display:block;line-height:1.1}
+.trail{position:relative;height:46px;margin:6px 8px 26px}
+.trail-bar{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:4px;background:var(--sand)}
+.trail-fill{position:absolute;left:0;top:20px;height:8px;border-radius:4px;background:var(--accent);transition:width .8s ease}
+.stop{position:absolute;top:14px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px}
+.stop i{width:20px;height:20px;border-radius:50%;background:var(--surface);border:3px solid var(--sand-2);display:block}
+.stop.hit i{border-color:var(--accent);background:var(--accent)}
+.stop span{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.stop.hit span{color:var(--fg);font-weight:600}
+.stop.first span{transform:translateX(35%)} .stop.last span{transform:translateX(-35%)}
+.caravan-marker{position:absolute;top:-10px;transform:translateX(-50%);transition:left .8s ease}
+.caravan-marker svg{width:38px;height:28px;display:block}
+
+/* race */
+.race{display:flex;flex-direction:column;gap:12px}
+.race-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.lanes{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 0;overflow:hidden}
+.lane{display:grid;grid-template-columns:44px minmax(110px,170px) 1fr 82px;align-items:center;gap:12px;padding:8px 16px}
+.lane+.lane{border-top:1px dashed var(--line)}
+.rank{font-family:var(--display);font-weight:800;font-size:1.1rem;color:var(--muted);text-align:center}
+.lane.p1 .rank{color:var(--warn)}
+.who{min-width:0}
+.who strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who span{font-size:.78rem;color:var(--muted)}
+.track{position:relative;height:52px;border-radius:10px;background:
+  repeating-linear-gradient(90deg,transparent 0 calc(25% - 1px),color-mix(in srgb,var(--dune) 45%,transparent) calc(25% - 1px) 25%),
+  linear-gradient(180deg,var(--sand) 0 70%,var(--sand-2) 70% 100%);min-width:0}
+.finish{position:absolute;right:0;top:0;bottom:0;width:10px;border-radius:0 10px 10px 0;
+  background:repeating-conic-gradient(var(--fg) 0 25%,var(--surface) 0 50%) 0 0/10px 10px;opacity:.55}
+.camel{position:absolute;bottom:4px;width:58px;height:44px;transition:left 1s cubic-bezier(.3,.7,.3,1),transform 1s cubic-bezier(.3,.7,.3,1)}
+.camel svg{width:100%;height:100%;display:block;overflow:visible}
+.camel.bob svg{animation:bob .45s ease-in-out 4}
+@keyframes bob{50%{transform:translateY(-4px)}}
+.kms{text-align:right}
+.kms b{font-family:var(--display);font-size:1.2rem;display:block;line-height:1.1}
+.kms span{font-size:.75rem;color:var(--muted)}
+.ticks{display:grid;grid-template-columns:44px minmax(110px,170px) 1fr 82px;gap:12px;padding:0 16px;font-size:.72rem;color:var(--muted)}
+.ticks .t{position:relative;height:16px}
+.ticks .t span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.ticks .t span:first-child{transform:none} .ticks .t span:last-child{transform:translateX(-100%)}
+
+/* panels */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+form{display:flex;flex-direction:column;gap:14px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.row>*{flex:1 1 140px}
+input[type=text],input[type=number],input[type=date],select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px 6px 8px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:.85rem;font-weight:500}
+.chip i{width:12px;height:12px;border-radius:50%;display:block}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;width:max-content}
+.seg button{border:0;background:var(--bg);padding:8px 14px;font-size:.88rem}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn{border:0;border-radius:9px;padding:11px 16px;background:var(--accent);color:var(--accent-fg);font-weight:600}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line);padding:8px 12px}
+.note{font-size:.85rem;min-height:1.3em}
+.note.ok{color:var(--good)} .note.bad{color:var(--danger)}
+.empty{padding:22px 16px;text-align:center;color:var(--muted);font-size:.92rem}
+
+ul.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+ul.log li{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+ul.log li:first-child{border-top:0}
+.pill{font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.pill.lunch{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.vergader{background:var(--accent-soft);color:var(--accent)}
+.log .what{min-width:0}
+.log .what strong{display:block;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log .what span{font-size:.78rem;color:var(--muted)}
+.x{border:0;background:transparent;color:var(--muted);font-size:.78rem;padding:4px 6px;border-radius:6px}
+.x:hover{color:var(--danger)}
+.x.sure{color:var(--danger);font-weight:600}
+
+details.beheer{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 20px}
+details.beheer summary{cursor:pointer;padding:14px 0;font-family:var(--display);font-weight:700;font-size:1.1rem}
+.beheer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;padding:4px 0 20px}
+.beheer-grid>div{display:flex;flex-direction:column;gap:12px;min-width:0}
+ul.plain{list-style:none;margin:0;padding:0}
+ul.plain li{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:.9rem}
+ul.plain li span.grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swatches{display:flex;flex-wrap:wrap;gap:6px}
+.swatches button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;padding:0}
+.swatches button[aria-pressed="true"]{border-color:var(--fg)}
+
+@media (max-width:860px){.cols{grid-template-columns:1fr}.beheer-grid{grid-template-columns:1fr}}
+@media (max-width:620px){
+  .lane{grid-template-columns:30px 1fr 70px;grid-template-areas:"r w k" "t t t";row-gap:6px}
+  .lane .rank{grid-area:r}.lane .who{grid-area:w}.lane .kms{grid-area:k}.lane .track{grid-area:t}
+  .ticks{grid-template-columns:1fr}.ticks>div:not(.t){display:none}
+  .camel{width:48px;height:36px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="camel" viewBox="0 0 64 48">
+      <g fill="var(--camel)">
+        <rect x="17" y="28" width="3.4" height="17" rx="1.6"/>
+        <rect x="23" y="29" width="3.4" height="16" rx="1.6" fill="var(--camel-dark)"/>
+        <rect x="37" y="28" width="3.4" height="17" rx="1.6"/>
+        <rect x="43" y="29" width="3.4" height="16" rx="1.6" fill="var(--camel-dark)"/>
+        <ellipse cx="31" cy="26" rx="17" ry="8.5"/>
+        <path d="M18 24 C20 10, 38 8, 41 22 Z"/>
+        <path d="M42 26 L47 27 L55 12 L51 9 Z"/>
+        <ellipse cx="55.5" cy="10.5" rx="6.5" ry="3.6"/>
+        <rect x="51" y="5" width="2.4" height="4" rx="1.2"/>
+        <path d="M14.5 23 Q10 28 11.5 34" stroke="var(--camel)" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      </g>
+      <circle cx="57.5" cy="9.6" r="1" fill="var(--fg)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Lunch- en vergaderwandelingen</div>
+      <h1>Kamelenrace</h1>
+      <p>Elke wandeling brengt je kameel verder. Geef je loopje op, wie het meest loopt wint, en samen trekken we de karavaan naar de oase.</p>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Verbinden…</span></div>
+  </header>
+
+  <section class="caravan" aria-labelledby="teamTitle">
+    <div class="caravan-head">
+      <div>
+        <div class="eyebrow" id="teamTitle">Samen naar de oase</div>
+        <div class="big num"><span id="teamKm">0</span><small>van <span id="teamGoal">500</span> km</small></div>
+      </div>
+      <div class="stats">
+        <div><b class="num" id="stWalks">0</b>wandelingen</div>
+        <div><b class="num" id="stLunch">0</b>lunchwandelingen</div>
+        <div><b class="num" id="stMeet">0</b>vergaderwandelingen</div>
+        <div><b class="num" id="stWeek">0 km</b>deze week</div>
+      </div>
+    </div>
+    <div class="trail" id="trail">
+      <div class="trail-bar"></div>
+      <div class="trail-fill" id="trailFill" style="width:0%"></div>
+    </div>
+  </section>
+
+  <section class="race" aria-labelledby="raceTitle">
+    <div class="race-head">
+      <h2 id="raceTitle">De race</h2>
+      <span class="muted" style="font-size:.88rem">Finish bij <b class="num" id="finishKm">100</b> km per kameel</span>
+    </div>
+    <div class="lanes" id="lanes">
+      <div class="empty">De renbaan laadt…</div>
+    </div>
+    <div class="ticks" id="ticks"></div>
+  </section>
+
+  <div class="cols">
+    <section class="panel" aria-labelledby="logTitle">
+      <h2 id="logTitle">Wandeling opgeven</h2>
+      <form id="walkForm" novalidate>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600">
+          Wie liepen er mee?
+          <div class="chips" id="walkerChips"><span class="muted" style="font-weight:400">Voeg eerst kamelen toe onder Beheer.</span></div>
+        </div>
+        <div class="row">
+          <label class="f">Route
+            <select id="routeSel"></select>
+          </label>
+          <label class="f" id="kmWrap">Afstand (km)
+            <input type="number" id="kmIn" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="bijv. 2,5">
+          </label>
+        </div>
+        <div class="row">
+          <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600">Soort
+            <div class="seg" id="kindSeg">
+              <button type="button" data-kind="lunch" aria-pressed="true">Lunch</button>
+              <button type="button" data-kind="vergader" aria-pressed="false">Vergadering</button>
+            </div>
+          </div>
+          <label class="f">Datum
+            <input type="date" id="dateIn">
+          </label>
+        </div>
+        <button class="btn" id="walkBtn" type="submit" disabled>Wandeling opgeven</button>
+        <div class="note" id="walkNote" role="status"></div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="recentTitle">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <h2 id="recentTitle">Laatste wandelingen</h2>
+        <button class="btn ghost" id="moreBtn" type="button" hidden>Toon alles</button>
+      </div>
+      <ul class="log" id="log"><li class="empty" style="display:block">Nog geen wandelingen. Geef de eerste op!</li></ul>
+    </section>
+  </div>
+
+  <details class="beheer" id="beheer">
+    <summary>Beheer: kamelen, vaste routes en doelen</summary>
+    <div class="beheer-grid">
+      <div>
+        <h3>Kamelen</h3>
+        <form id="camelForm" novalidate>
+          <label class="f">Naam collega<input type="text" id="camelName" maxlength="40" placeholder="Voornaam"></label>
+          <div class="swatches" id="swatches" aria-label="Kleur van het zadel"></div>
+          <button class="btn" type="submit">Kameel toevoegen</button>
+          <div class="note" id="camelNote" role="status"></div>
+        </form>
+        <ul class="plain" id="camelList"></ul>
+      </div>
+      <div>
+        <h3>Vaste wandelingen</h3>
+        <form id="routeForm" novalidate>
+          <div class="row">
+            <label class="f" style="flex:2 1 140px">Naam<input type="text" id="routeName" maxlength="50" placeholder="Rondje park"></label>
+            <label class="f" style="flex:1 1 80px">km<input type="number" id="routeKm" min="0.1" max="100" step="0.1" inputmode="decimal"></label>
+          </div>
+          <button class="btn" type="submit">Route toevoegen</button>
+          <div class="note" id="routeNote" role="status"></div>
+        </form>
+        <ul class="plain" id="routeList"></ul>
+      </div>
+      <div>
+        <h3>Doelen</h3>
+        <form id="goalForm" novalidate>
+          <label class="f">Teamdoel (km samen)<input type="number" id="goalTeam" min="1" step="1"></label>
+          <label class="f">Finish per kameel (km)<input type="number" id="goalPersonal" min="1" step="1"></label>
+          <button class="btn" type="submit">Doelen opslaan</button>
+          <div class="note" id="goalNote" role="status"></div>
+        </form>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+(() => {
+  const COLORS = ["#D1495B","#2E86AB","#E8A33D","#5B8E3E","#8E5BB5","#E0699B","#1F9E89","#3D405B","#F26B38","#7D9D1E"];
+  const STOPS = [
+    {p:0, name:"Vertrek"}, {p:.25, name:"Waterput"}, {p:.5, name:"Karavanserai"}, {p:.75, name:"Duinkam"}, {p:1, name:"Oase"}
+  ];
+  const S = { camels:[], routes:[], walks:[], config:{teamGoal:500, personalGoal:100}, loaded:{}, showAll:false };
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString("nl-NL",{maximumFractionDigits:1});
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const today = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  let db = null, canWrite = true;
+  let selWalkers = new Set(), kind = "lunch", newColor = COLORS[0], routeChoice = null;
+  let lastPositions = {};
+
+  $("dateIn").value = today();
+  $("dateIn").max = today();
+
+  function setStatus(cls, text){ $("status").className = "status " + cls; $("statusText").textContent = text; }
+  function note(id, cls, text){ const n=$(id); n.className="note "+cls; n.textContent=text; if(cls==="ok") setTimeout(()=>{ if(n.textContent===text) n.textContent=""; },3500); }
+
+  function camelSvg(color){
+    return `<svg viewBox="0 0 64 48" aria-hidden="true"><use href="#camel"/><path d="M21 18 C24 12, 36 12, 38 19 L37 25 L22 25 Z" fill="${color}"/><rect x="21" y="24" width="17" height="3" rx="1" fill="${color}" opacity=".7"/></svg>`;
+  }
+
+  // ---------- derived ----------
+  function totals(){
+    const ids = new Set(S.camels.map(c=>c.id));
+    const per = {}; S.camels.forEach(c => per[c.id] = {km:0, n:0});
+    let team = 0, lunch = 0, meet = 0, week = 0;
+    const now = new Date(); const day = (now.getDay()+6)%7;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate()-day);
+    const monStr = new Date(monday.getTime()-monday.getTimezoneOffset()*60000).toISOString().slice(0,10);
+    for(const w of S.walks){
+      const walkers = (w.walkers||[]).filter(id=>ids.has(id));
+      const km = Number(w.km)||0;
+      walkers.forEach(id => { per[id].km += km; per[id].n++; });
+      team += km*walkers.length;
+      if(w.kind==="vergader") meet++; else lunch++;
+      if((w.date||"") >= monStr) week += km*walkers.length;
+    }
+    return {per, team, lunch, meet, week, count:S.walks.length};
+  }
+
+  // ---------- render ----------
+  function render(){
+    const t = totals();
+    const goal = Math.max(1, Number(S.config.teamGoal)||500);
+    const fin = Math.max(1, Number(S.config.personalGoal)||100);
+
+    // caravan
+    $("teamKm").textContent = fmt(t.team);
+    $("teamGoal").textContent = fmt(goal);
+    $("stWalks").textContent = t.count; $("stLunch").textContent = t.lunch; $("stMeet").textContent = t.meet;
+    $("stWeek").textContent = fmt(t.week) + " km";
+    const tp = Math.min(1, t.team/goal);
+    $("trailFill").style.width = (tp*100)+"%";
+    const trail = $("trail");
+    trail.querySelectorAll(".stop,.caravan-marker").forEach(e=>e.remove());
+    STOPS.forEach(s => {
+      const el = document.createElement("div");
+      el.className = "stop" + (s.p===0?" first":s.p===1?" last":"") + (tp >= s.p && (s.p>0 || t.team>0) ? " hit" : "");
+      el.style.left = (s.p*100)+"%";
+      el.innerHTML = `<i></i><span>${s.name}${s.p>0?` · ${fmt(goal*s.p)}`:""}</span>`;
+      trail.appendChild(el);
+    });
+    const mk = document.createElement("div");
+    mk.className = "caravan-marker"; mk.style.left = (tp*100)+"%";
+    mk.innerHTML = camelSvg("var(--accent)");
+    trail.appendChild(mk);
+    $("finishKm").textContent = fmt(fin);
+
+    // lanes
+    const lanes = $("lanes");
+    if(!S.camels.length){
+      lanes.innerHTML = `<div class="empty">${S.loaded.camels ? "Nog geen kamelen aan de start. Open <b>Beheer</b> hieronder en voeg per collega een kameel toe." : "De renbaan laadt…"}</div>`;
+      $("ticks").innerHTML = "";
+    } else {
+      const sorted = [...S.camels].sort((a,b)=> (t.per[b.id].km - t.per[a.id].km) || a.name.localeCompare(b.name,"nl"));
+      const leader = sorted.length ? t.per[sorted[0].id].km : 0;
+      const scale = Math.max(fin, leader);
+      let rank = 0, prev = null;
+      lanes.innerHTML = sorted.map((c,i) => {
+        const km = t.per[c.id].km;
+        if(km !== prev){ rank = i+1; prev = km; }
+        const p = Math.min(1, km/scale)*100;
+        const done = km >= fin;
+        return `<div class="lane${rank===1&&km>0?" p1":""}" data-id="${esc(c.id)}">
+          <div class="rank num">${km>0?rank:"–"}</div>
+          <div class="who"><strong>${esc(c.name)}</strong><span>${t.per[c.id].n} ${t.per[c.id].n===1?"wandeling":"wandelingen"}${done?" · gefinisht":""}</span></div>
+          <div class="track"><div class="finish"></div>
+            <div class="camel" style="left:${p}%;transform:translateX(-${p}%)">${camelSvg(esc(c.color||COLORS[0]))}</div></div>
+          <div class="kms"><b class="num">${fmt(km)}</b><span>km</span></div>
+        </div>`;
+      }).join("");
+      const tk = [0,.25,.5,.75,1].map(f => `<span style="left:${f*100}%">${fmt(Math.round(scale*f*10)/10)} km</span>`).join("");
+      $("ticks").innerHTML = `<div></div><div></div><div class="t">${tk}</div><div></div>`;
+      // bob camels that moved
+      sorted.forEach(c => {
+        const km = t.per[c.id].km;
+        if(lastPositions[c.id] !== undefined && km > lastPositions[c.id]){
+          const el = lanes.querySelector(`.lane[data-id="${CSS.escape(c.id)}"] .camel`);
+          if(el){ el.classList.add("bob"); }
+        }
+        lastPositions[c.id] = km;
+      });
+    }
+
+    // walker chips
+    const chips = $("walkerChips");
+    if(S.camels.length){
+      const byName = [...S.camels].sort((a,b)=>a.name.localeCompare(b.name,"nl"));
+      chips.innerHTML = byName.map(c => `<button type="button" class="chip" data-id="${esc(c.id)}" aria-pressed="${selWalkers.has(c.id)}"><i style="background:${esc(c.color)}"></i>${esc(c.name)}</button>`).join("");
+    } else {
+      chips.innerHTML = `<span class="muted" style="font-weight:400">Voeg eerst kamelen toe onder Beheer.</span>`;
+    }
+    [...selWalkers].forEach(id => { if(!S.camels.some(c=>c.id===id)) selWalkers.delete(id); });
+
+    // route select
+    const rs = $("routeSel"); const cur = routeChoice;
+    const routes = [...S.routes].sort((a,b)=>(a.km-b.km)||a.name.localeCompare(b.name,"nl"));
+    rs.innerHTML = routes.map(r => `<option value="${esc(r.id)}">${esc(r.name)} · ${fmt(r.km)} km</option>`).join("") + `<option value="__eigen">Eigen route…</option>`;
+    rs.value = [...rs.options].some(o=>o.value===cur) ? cur : (routes[0]?.id || "__eigen");
+    syncRoute();
+
+    // log
+    const log = $("log");
+    const name = id => S.camels.find(c=>c.id===id)?.name;
+    const walks = [...S.walks].sort((a,b)=> (b.date||"").localeCompare(a.date||"") || (b.created||0)-(a.created||0));
+    const shown = S.showAll ? walks : walks.slice(0,8);
+    $("moreBtn").hidden = walks.length <= 8;
+    $("moreBtn").textContent = S.showAll ? "Toon minder" : `Toon alles (${walks.length})`;
+    log.innerHTML = shown.length ? shown.map(w => {
+      const names = (w.walkers||[]).map(name).filter(Boolean);
+      const d = w.date ? new Date(w.date+"T12:00").toLocaleDateString("nl-NL",{weekday:"short",day:"numeric",month:"short"}) : "";
+      return `<li><span class="pill ${w.kind==="vergader"?"vergader":"lunch"}">${w.kind==="vergader"?"Vergadering":"Lunch"}</span>
+        <div class="what"><strong>${esc(names.join(", ")||"Onbekende kameel")}</strong><span>${esc(w.routeName||"Eigen route")} · ${esc(d)}</span></div>
+        <span class="num" style="font-weight:600">${fmt(Number(w.km)||0)} km</span>
+        <button class="x" type="button" data-del-walk="${esc(w.id)}" aria-label="Wandeling verwijderen">Wis</button></li>`;
+    }).join("") : `<li class="empty" style="display:block">${S.loaded.walks ? "Nog geen wandelingen. Geef de eerste op!" : "Wandelingen laden…"}</li>`;
+
+    // beheer lists
+    $("camelList").innerHTML = [...S.camels].sort((a,b)=>a.name.localeCompare(b.name,"nl")).map(c =>
+      `<li><span style="width:12px;height:12px;border-radius:50%;background:${esc(c.color)};flex:none"></span><span class="grow">${esc(c.name)}</span><button class="x" type="button" data-del-camel="${esc(c.id)}">Verwijder</button></li>`).join("");
+    $("routeList").innerHTML = routes.map(r =>
+      `<li><span class="grow">${esc(r.name)}</span><span class="num muted">${fmt(r.km)} km</span><button class="x" type="button" data-del-route="${esc(r.id)}">Verwijder</button></li>`).join("")
+      || `<li class="muted" style="border:0">Nog geen vaste routes. Voeg je vaste rondjes toe, dan kan iedereen ze kiezen.</li>`;
+    if(document.activeElement !== $("goalTeam")) $("goalTeam").value = goal;
+    if(document.activeElement !== $("goalPersonal")) $("goalPersonal").value = fin;
+
+    updateWalkBtn();
+  }
+
+  function syncRoute(){
+    const own = $("routeSel").value === "__eigen";
+    const r = S.routes.find(r=>r.id===$("routeSel").value);
+    $("kmIn").disabled = !own;
+    if(!own && r) $("kmIn").value = r.km;
+    else if(own && document.activeElement !== $("kmIn") && S.routes.some(r=>String(r.km)===$("kmIn").value)) $("kmIn").value = "";
+  }
+  function updateWalkBtn(){
+    const km = parseFloat(String($("kmIn").value).replace(",","."));
+    $("walkBtn").disabled = !db || !canWrite || selWalkers.size===0 || !(km>0);
+  }
+
+  function swatches(){
+    $("swatches").innerHTML = COLORS.map(c=>`<button type="button" style="background:${c}" data-color="${c}" aria-label="Zadelkleur ${c}" aria-pressed="${c===newColor}"></button>`).join("");
+  }
+  swatches();
+
+  // ---------- events ----------
+  $("walkerChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if(!b) return;
+    const id = b.dataset.id; selWalkers.has(id) ? selWalkers.delete(id) : selWalkers.add(id);
+    b.setAttribute("aria-pressed", selWalkers.has(id)); updateWalkBtn();
+  });
+  $("kindSeg").addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return; kind = b.dataset.kind;
+    $("kindSeg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  });
+  $("routeSel").addEventListener("change", () => { routeChoice = $("routeSel").value; syncRoute(); if($("routeSel").value==="__eigen") $("kmIn").focus(); updateWalkBtn(); });
+  $("kmIn").addEventListener("input", updateWalkBtn);
+  $("swatches").addEventListener("click", e => { const b=e.target.closest("button"); if(!b) return; newColor=b.dataset.color; swatches(); });
+  $("moreBtn").addEventListener("click", () => { S.showAll = !S.showAll; render(); });
+
+  async function guard(fn, noteId){
+    if(!db){ note(noteId,"bad","Geen verbinding met de gedeelde opslag. Open de pagina terwijl je bent ingelogd."); return false; }
+    try { await fn(); return true; }
+    catch(err){
+      const code = err?.code;
+      if(code==="invalid_argument"){ canWrite = false; note(noteId,"bad","Je kunt hier alleen meekijken. Vraag om toegang als bijdrager om wandelingen op te geven."); }
+      else if(code==="quota_exceeded") note(noteId,"bad","De opslag is vol. Verwijder oude wandelingen om ruimte te maken.");
+      else note(noteId,"bad","Opslaan lukte niet. Probeer het zo nog eens.");
+      updateWalkBtn(); return false;
+    }
+  }
+
+  $("walkForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const km = Math.round(parseFloat(String($("kmIn").value).replace(",","."))*10)/10;
+    if(!selWalkers.size){ note("walkNote","bad","Kies wie er meeliepen."); return; }
+    if(!(km>0) || km>100){ note("walkNote","bad","Vul een afstand tussen 0,1 en 100 km in."); return; }
+    const r = S.routes.find(r=>r.id===$("routeSel").value);
+    const walk = { walkers:[...selWalkers], km, kind, date: $("dateIn").value || today(),
+      routeId: r ? r.id : null, routeName: r ? r.name : "Eigen route", created: Date.now() };
+    $("walkBtn").disabled = true;
+    const ok = await guard(() => db.collection("walks").add(walk), "walkNote");
+    if(ok){
+      const n = walk.walkers.length;
+      note("walkNote","ok", `Opgegeven: ${fmt(km)} km voor ${n===1?"1 kameel":n+" kamelen"}. Lekker gelopen!`);
+      selWalkers.clear(); render();
+    }
+    updateWalkBtn();
+  });
+
+  $("camelForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = $("camelName").value.trim();
+    if(!name){ note("camelNote","bad","Vul een naam in."); return; }
+    if(S.camels.some(c=>c.name.toLowerCase()===name.toLowerCase())){ note("camelNote","bad",`${name} heeft al een kameel.`); return; }
+    const ok = await guard(() => db.collection("camels").add({name, color:newColor, created:Date.now()}), "camelNote");
+    if(ok){ $("camelName").value=""; newColor = COLORS[(COLORS.indexOf(newColor)+1)%COLORS.length]; swatches(); note("camelNote","ok",`${name} staat aan de start.`); }
+  });
+
+  $("routeForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = $("routeName").value.trim();
+    const km = Math.round(parseFloat(String($("routeKm").value).replace(",","."))*10)/10;
+    if(!name || !(km>0)){ note("routeNote","bad","Vul een naam en afstand in."); return; }
+    const ok = await guard(() => db.collection("routes").add({name, km, created:Date.now()}), "routeNote");
+    if(ok){ $("routeName").value=""; $("routeKm").value=""; note("routeNote","ok",`${name} toegevoegd.`); }
+  });
+
+  $("goalForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const teamGoal = Math.round(Number($("goalTeam").value)), personalGoal = Math.round(Number($("goalPersonal").value));
+    if(!(teamGoal>0) || !(personalGoal>0)){ note("goalNote","bad","Vul twee positieve getallen in."); return; }
+    const ok = await guard(() => db.doc("config/race").set({teamGoal, personalGoal}), "goalNote");
+    if(ok) note("goalNote","ok","Doelen opgeslagen.");
+  });
+
+  // two-step delete
+  let armed = null, armTimer = null;
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-del-walk],[data-del-camel],[data-del-route]"); if(!b) return;
+    if(armed !== b){
+      if(armed){ armed.classList.remove("sure"); armed.textContent = armed.dataset.label; }
+      armed = b; b.dataset.label = b.textContent; b.classList.add("sure"); b.textContent = "Zeker?";
+      clearTimeout(armTimer); armTimer = setTimeout(()=>{ if(armed===b){ b.classList.remove("sure"); b.textContent=b.dataset.label; armed=null; } }, 3000);
+      return;
+    }
+    armed = null; clearTimeout(armTimer);
+    const path = b.dataset.delWalk ? "walks/"+b.dataset.delWalk : b.dataset.delCamel ? "camels/"+b.dataset.delCamel : "routes/"+b.dataset.delRoute;
+    const nid = b.dataset.delWalk ? "walkNote" : b.dataset.delCamel ? "camelNote" : "routeNote";
+    await guard(() => db.doc(path).delete(), nid);
+  });
+
+  // ---------- data ----------
+  render();
+  async function start(){
+    if(!window.claude?.use){ setStatus("err","Alleen bekijken: open de pagina op claude.ai om mee te doen"); S.loaded={camels:true,walks:true}; render(); return; }
+    db = await window.claude.use("db");
+    if(!db){ setStatus("err","Log in bij claude.ai om de race te zien en mee te doen"); S.loaded={camels:true,walks:true}; render(); return; }
+    try{
+      const user = await window.claude.use("user");
+      const w = user ? await user.can("data.write") : null;
+      if(w === false){ canWrite = false; }
+    }catch(_){}
+    const timer = setTimeout(()=> setStatus("err","De gegevens zijn nog niet bereikbaar"), 10000);
+    let live = 0;
+    const done = (snap) => { if(!snap.metadata.fromCache){ live++; if(live>=4){ clearTimeout(timer); setStatus("live", canWrite ? "Live bijgewerkt" : "Live · alleen meekijken"); } } };
+    const fail = () => { clearTimeout(timer); setStatus("err","Verbinding verbroken. Herlaad de pagina later."); };
+    const list = (snap) => snap.docs.map(d => ({id:d.id, ...d.data()}));
+    db.collection("camels").onSnapshot(s => { S.camels = list(s).filter(c=>c.name); S.loaded.camels=true; done(s); render(); }, fail);
+    db.collection("routes").onSnapshot(s => { S.routes = list(s).filter(r=>r.name && Number(r.km)>0); done(s); render(); }, fail);
+    db.collection("walks").onSnapshot(s => { S.walks = list(s); S.loaded.walks=true; done(s); render(); }, fail);
+    db.doc("config/race").onSnapshot(s => { if(s.exists) S.config = {...S.config, ...s.data()}; done(s); render(); }, fail);
+    updateWalkBtn();
+  }
+  start();
+})();
+</script>

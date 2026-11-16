@@ -1,0 +1,40 @@
+name: Deploy via FTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      # Geen build-stap nodig: de pagina is gewone HTML. We zetten public/ en
+      # de PHP-API samen in dist/.
+      - name: Prepare dist
+        run: |
+          mkdir -p dist
+          cp -R public/. dist/
+          cp -R api dist/api
+          rm -rf dist/api/data
+
+      - name: Check PHP syntax
+        run: for f in $(find dist/api -name '*.php'); do php -l "$f"; done
+
+      # Uploadt alleen dist/ naar public_html. De wandelingen staan in
+      # /domains/kamelenrace.emmadriesse.com/kamelenrace-data, buiten public_html,
+      # en worden dus nooit overschreven of verwijderd door een deploy.
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: 21
+          local-dir: dist/
+          server-dir: /domains/kamelenrace.emmadriesse.com/public_html/
