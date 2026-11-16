@@ -63,9 +63,11 @@ function data_dir(): string
     if ($dir !== null) return $dir;
     $candidates = [];
     if (getenv('KAMEEL_DATA_DIR')) $candidates[] = getenv('KAMEEL_DATA_DIR');
-    // Op de server: naast public_html, dus nooit via de website op te vragen en
-    // nooit overschreven door een deploy
-    if (basename(dirname(__DIR__)) === 'public_html') $candidates[] = dirname(__DIR__, 2) . '/kamelenrace-data';
+    // Op de server: naast public_html (ook als de site in een submap staat, zoals
+    // public_html/kamelenrace/), dus nooit via de website op te vragen en nooit
+    // overschreven door een deploy
+    $pos = strrpos(__DIR__, '/public_html/');
+    if ($pos !== false) $candidates[] = substr(__DIR__, 0, $pos) . '/kamelenrace-data';
     // Noodoplossing: binnen /api (afgeschermd doordat alles naar index.php gaat)
     $candidates[] = __DIR__ . '/data';
     foreach ($candidates as $c) {

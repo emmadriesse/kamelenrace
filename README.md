@@ -5,7 +5,7 @@ in de race; samen trekken we de karavaan naar de oase. Geen login: iedereen geef
 vertrouwen zijn wandelingen op.
 
 Gewone HTML-pagina (`public/index.html`) met een kleine PHP-API (`api/index.php`).
-Draait op gewone webhosting (PHP + Apache).
+Draait op gewone webhosting (PHP + Apache), live op **hth.emmadriesse.com/kamelenrace**.
 
 ## Lokaal starten
 
@@ -20,7 +20,7 @@ Open http://127.0.0.1:8080. Lokaal staat alles in `data/db.json`.
 Elke push naar `main` zet de site via FTP op de server (zie `.github/workflows/ftp-deploy.yml`).
 Nodig in GitHub → Settings → Secrets and variables → Actions: `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`.
 
-De data staat op de server in `/domains/kamelenrace.emmadriesse.com/kamelenrace-data/db.json`,
+De data staat op de server in `/domains/hth.emmadriesse.com/kamelenrace-data/db.json`,
 buiten `public_html`. Die wordt dus nooit door een deploy overschreven en is niet via de website
 op te vragen. Maak er af en toe een kopie van als back-up.
 

@@ -26,9 +26,10 @@ jobs:
       - name: Check PHP syntax
         run: for f in $(find dist/api -name '*.php'); do php -l "$f"; done
 
-      # Uploadt alleen dist/ naar public_html. De wandelingen staan in
-      # /domains/kamelenrace.emmadriesse.com/kamelenrace-data, buiten public_html,
-      # en worden dus nooit overschreven of verwijderd door een deploy.
+      # Uploadt dist/ naar de submap /kamelenrace van hth.emmadriesse.com.
+      # De wandelingen staan in /domains/hth.emmadriesse.com/kamelenrace-data,
+      # buiten public_html, en worden dus nooit overschreven door een deploy.
+      # De HTH-deploy laat deze submap met rust (hij wist alleen eigen bestanden).
       - name: Deploy to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -37,4 +38,4 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           local-dir: dist/
-          server-dir: /domains/kamelenrace.emmadriesse.com/public_html/
+          server-dir: /domains/hth.emmadriesse.com/public_html/kamelenrace/

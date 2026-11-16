@@ -1,13 +1,13 @@
 # Kamelenrace
 Options -Indexes
 
+# Eigen rewrite-regels: zo geldt de React-regel van de HTH-app (alles naar
+# index.html) niet binnen /kamelenrace
 <IfModule mod_rewrite.c>
   RewriteEngine On
-
-  # Altijd via https: haal de # weg zodra het SSL-certificaat actief is
-  # RewriteCond %{HTTPS} off
-  # RewriteCond %{HTTP:X-Forwarded-Proto} !https
-  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
 # index.html nooit cachen, zodat iedereen meteen de nieuwste versie krijgt
